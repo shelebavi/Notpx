@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تراکنش‌های PX</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    body {
+      font-family: 'Vazir', sans-serif;
+    }
+    body.dark {
+      background-color: #1f2937;
+      color: #f3f4f6;
+    }
+    .transaction-enter {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    .transaction-enter-active {
+      opacity: 1;
+      transform: translateY(0);
+      transition: all 0.4s ease;
+    }
+    .toggle-container {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #e5e7eb;
+      transition: background-color 0.3s ease;
+    }
+    .dark .toggle-container {
+      background-color: #4b5563;
+    }
+    .toggle-icon {
+      font-size: 20px;
+      transition: color 0.3s ease;
+      color: #1f2937;
+    }
+    .dark .toggle-icon {
+      color: #f3f4f6;
+    }
+    .card {
+      background-color: #ffffff;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .dark .card {
+      background-color: #374151;
+    }
+    .lang-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      background-color: #e5e7eb;
+      transition: background-color 0.3s ease;
+    }
+    .dark .lang-btn {
+      background-color: #4b5563;
+    }
+    .lang-btn:hover {
+      background-color: #d1d5db;
+    }
+    .dark .lang-btn:hover {
+      background-color: #6b7280;
+    }
+    .btn-lang {
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      transition: background-color 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background-color: #e5e7eb;
+    }
+    .dark .btn-lang {
+      background-color: #4b5563;
+    }
+    .btn-lang:hover {
+      background-color: #d1d5db;
+    }
+    .dark .btn-lang:hover {
+      background-color: #6b7280;
+    }
+    [dir="ltr"] .space-x-reverse {
+      flex-direction: row;
+    }
+    [dir="ltr"] .space-x-6 > * + * {
+      margin-left: 1.5rem;
+    }
+    [dir="ltr"] .amount-value {
+      direction: ltr;
+      display: inline-block;
+    }
+    [dir="rtl"] .amount-value {
+      direction: rtl;
+      display: inline-block;
+    }
+    .tx-buy {
+      color: #16a34a; /* سبز برای خرید */
+      text-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+    }
+    .tx-sell {
+      color: #ef4444; /* قرمز برای فروش */
+      text-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+    }
+    .dark .text-gray-600 {
+      color: #f3f4f6; /* سفید در دارک مود */
+    }
+    .dark .text-gray-500 {
+      color: #f3f4f6; /* سفید در دارک مود */
+    }
+  </style>
+</head>
+<body class="transition-colors duration-300 bg-gray-100 dark:bg-gray-900">
+  <div class="container mx-auto px-4 py-8 max-w-4xl">
+    <!-- هدر -->
+    <header class="flex flex-col sm:flex-row justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white">تراکنش‌های PX</h1>
+      <div class="flex items-center space-x-6 space-x-reverse mt-4 sm:mt-0">
+        <div class="relative">
+          <button id="languageToggle" class="btn-lang">
+            <span id="currentLang">🇮🇷 فارسی</span>
+            <i data-feather="chevron-down"></i>
+          </button>
+          <div id="languageDropdown" class="hidden absolute mt-2 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-10">
+            <button class="lang-btn w-full text-right px-4 py-2" data-lang="fa">🇮🇷 فارسی</button>
+            <button class="lang-btn w-full text-left px-4 py-2" data-lang="en">🌐 English</button>
+            <button class="lang-btn w-full text-left px-4 py-2" data-lang="ru">🇷🇺 Русский</button>
+            <button class="lang-btn w-full text-right px-4 py-2" data-lang="ar">🇸🇦 العربية</button>
+          </div>
+        </div>
+        <label class="flex items-center cursor-pointer">
+          <input id="modeToggle" type="checkbox" class="hidden">
+          <div class="toggle-container">
+            <span class="toggle-icon">☀️</span>
+          </div>
+        </label>
+      </div>
+    </header>
+
+    <!-- نمایش قیمت -->
+    <div id="priceDisplay" class="mb-6 card p-4">
+      <span data-translate="pxPrice">قیمت PX</span>: $<span id="pxPrice">...</span>
+    </div>
+
+    <!-- لیست تراکنش‌ها -->
+    <div id="transactions" class="space-y-4"></div>
+  </div>
+
+  <script>
+    let latestHash = null;
+    let currentLang = 'fa';
+
+    const translations = {
+      fa: {
+        pxPrice: 'قیمت PX',
+        buy: 'خرید',
+        sell: 'فروش',
+        wallet: 'کیف‌پول',
+        amount: 'مقدار',
+        value: 'قیمت'
+      },
+      en: {
+        pxPrice: 'PX Price',
+        buy: 'Buy',
+        sell: 'Sell',
+        wallet: 'Wallet',
+        amount: 'Amount',
+        value: 'Value'
+      },
+      ru: {
+        pxPrice: 'Цена PX',
+        buy: 'Купить',
+        sell: 'Продать',
+        wallet: 'Кошелёк',
+        amount: 'Количество',
+        value: 'Стоимость'
+      },
+      ar: {
+        pxPrice: 'سعر PX',
+        buy: 'شراء',
+        sell: 'بيع',
+        wallet: 'المحفظة',
+        amount: 'الكمية',
+        value: 'القيمة'
+      }
+    };
+
+    const langIcons = {
+      fa: '🇮🇷 فارسی',
+      en: '🌐 English',
+      ru: '🇷🇺 Русский',
+      ar: '🇸🇦 العربية'
+    };
+
+    const langDirections = {
+      fa: 'rtl',
+      en: 'ltr',
+      ru: 'ltr',
+      ar: 'rtl'
+    };
+
+    function translate(key) {
+      return translations[currentLang][key] || key;
+    }
+
+    function updateTranslations() {
+      document.querySelectorAll('[data-translate]').forEach(element => {
+        const key = element.getAttribute('data-translate');
+        element.textContent = translate(key);
+      });
+      document.getElementById('currentLang').textContent = langIcons[currentLang];
+      document.documentElement.setAttribute('dir', langDirections[currentLang]);
+      document.documentElement.lang = currentLang;
+      const transactions = document.querySelectorAll('.transaction-card');
+      transactions.forEach(tx => {
+        const typeElement = tx.querySelector('.tx-type');
+        const walletElement = tx.querySelector('.tx-wallet');
+        const amountElement = tx.querySelector('.tx-amount');
+        const valueElement = tx.querySelector('.tx-value');
+        const typeKey = typeElement.getAttribute('data-type');
+        typeElement.textContent = translate(typeKey);
+        amountElement.innerHTML = `${translate('amount')}: <span class="amount-value">${tx.dataset.amount}</span>`;
+        valueElement.innerHTML = `${translate('value')}: <span class="amount-value">${tx.dataset.value}</span>`;
+        walletElement.innerHTML = `${translate('wallet')}: <a href="https://tonviewer.com/${tx.dataset.wallet}" target="_blank" class="text-blue-500 underline">${tx.dataset.wallet.slice(0, 6)}...${tx.dataset.wallet.slice(-4)}</a>`;
+      });
+    }
+
+    async function fetchPxPrice() {
+      try {
+        const res = await fetch('https://api.dexscreener.com/token-pairs/v1/ton/EQB420yQsZobGcy0VYDfSKHpG2QQlw-j1f_tPu1J488I__PX');
+        const data = await res.json();
+        const price = data[0]?.priceUsd || '0.07717';
+        document.getElementById('pxPrice').textContent = Number(price).toFixed(4);
+      } catch (e) {
+        document.getElementById('pxPrice').textContent = '0.07717';
+        console.error('خطا در دریافت قیمت:', e);
+      }
+    }
+
+    async function fetchTransactions() {
+      try {
+        const res = await fetch('https://api.dyor.io/v1/jettons/EQB420yQsZobGcy0VYDfSKHpG2QQlw-j1f_tPu1J488I__PX/transactions');
+        const data = await res.json();
+        const newTxs = [];
+        for (const tx of data.transactions.slice(0, 10)) {
+          if (tx.hash === latestHash) break;
+          newTxs.push(tx);
+        }
+        if (newTxs.length > 0) {
+          latestHash = newTxs[0].hash;
+          addTransactions(newTxs.reverse());
+        }
+      } catch (e) {
+        console.error('خطا در دریافت تراکنش‌ها:', e);
+      }
+    }
+
+    function addTransactions(txs) {
+      const container = document.getElementById('transactions');
+      txs.forEach(tx => {
+        const div = document.createElement('div');
+        div.className = 'transaction-enter card p-4 transaction-card';
+        div.dataset.wallet = tx.whoFriendly;
+        const typeKey = tx.type === 'TT_BUY' ? 'buy' : 'sell';
+        const typeClass = tx.type === 'TT_BUY' ? 'tx-buy' : 'tx-sell';
+        const amount = `${Math.floor(parseInt(tx.amount.value) / Math.pow(10, tx.amount.decimals)).toLocaleString()} PX`;
+        const value = `$${Math.floor((parseInt(tx.amount.value) / Math.pow(10, tx.amount.decimals)) * Number(document.getElementById('pxPrice').textContent)).toLocaleString()}`;
+        div.dataset.amount = amount;
+        div.dataset.value = value;
+        div.innerHTML = `
+          <div class="font-semibold text-lg tx-type ${typeClass}" data-type="${typeKey}">${translate(typeKey)}</div>
+          <div class="text-gray-600 dark:text-white tx-amount">${translate('amount')}: <span class="amount-value">${amount}</span></div>
+          <div class="text-gray-600 dark:text-white tx-value">${translate('value')}: <span class="amount-value">${value}</span></div>
+          <div class="text-sm text-gray-500 dark:text-white tx-wallet">${translate('wallet')}: <a href="https://tonviewer.com/${tx.whoFriendly}" target="_blank" class="text-blue-500 underline">${tx.whoFriendly.slice(0, 6)}...${tx.whoFriendly.slice(-4)}</a></div>
+        `;
+        container.insertBefore(div, container.firstChild);
+        requestAnimationFrame(() => div.classList.add('transaction-enter-active'));
+      });
+      while (container.children.length > 10) {
+        container.removeChild(container.lastChild);
+      }
+    }
+
+    // مدیریت منوی زبان
+    const languageToggle = document.getElementById('languageToggle');
+    const languageDropdown = document.getElementById('languageDropdown');
+    languageToggle.addEventListener('click', () => {
+      languageDropdown.classList.toggle('hidden');
+    });
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentLang = btn.getAttribute('data-lang');
+        updateTranslations();
+        languageDropdown.classList.add('hidden');
+      });
+    });
+
+    // رویداد تغییر تم
+    document.getElementById('modeToggle').addEventListener('change', e => {
+      document.body.classList.toggle('dark', e.target.checked);
+      const toggleIcon = document.querySelector('.toggle-icon');
+      toggleIcon.textContent = e.target.checked ? '🌙' : '☀️';
+    });
+
+    // به‌روزرسانی‌های خودکار
+    fetchPxPrice();
+    fetchTransactions();
+    setInterval(fetchPxPrice, 5000);
+    setInterval(fetchTransactions, 5000);
+    feather.replace();
+  </script>
+</body>
+</html>
