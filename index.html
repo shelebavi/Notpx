@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>تراکنش‌های PX</title>
+  <title data-translate="title">تراکنش‌ها</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <script src="https://unpkg.com/feather-icons"></script>
   <style>
@@ -102,18 +102,65 @@
       display: inline-block;
     }
     .tx-buy {
-      color: #16a34a; /* سبز برای خرید */
+      color: #16a34a;
       text-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
     }
     .tx-sell {
-      color: #ef4444; /* قرمز برای فروش */
+      color: #ef4444;
       text-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
     }
     .dark .text-gray-600 {
-      color: #f3f4f6; /* سفید در دارک مود */
+      color: #f3f4f6;
     }
     .dark .text-gray-500 {
-      color: #f3f4f6; /* سفید در دارک مود */
+      color: #f3f4f6;
+    }
+    .search-input {
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      border: 1px solid #d1d5db;
+      background-color: #f9fafb;
+      width: 100%;
+      max-width: 300px;
+    }
+    .dark .search-input {
+      background-color: #4b5563;
+      border-color: #6b7280;
+      color: #f3f4f6;
+    }
+    .wallet-info {
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      color: #4b5563;
+    }
+    .dark .wallet-info {
+      color: #f3f4f6;
+    }
+    .title {
+      color: #1f2937;
+    }
+    .dark .title {
+      color: #f3f4f6;
+    }
+    .load-more-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      background-color: #3b82f6;
+      color: white;
+      transition: background-color 0.3s ease;
+      margin-top: 1rem;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .load-more-btn:hover {
+      background-color: #2563eb;
+    }
+    .dark .load-more-btn {
+      background-color: #4b5563;
+    }
+    .dark .load-more-btn:hover {
+      background-color: #6b7280;
     }
   </style>
 </head>
@@ -121,7 +168,7 @@
   <div class="container mx-auto px-4 py-8 max-w-4xl">
     <!-- هدر -->
     <header class="flex flex-col sm:flex-row justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-white">تراکنش‌های PX</h1>
+      <h1 class="text-3xl font-bold title" data-translate="title">تراکنش‌ها</h1>
       <div class="flex items-center space-x-6 space-x-reverse mt-4 sm:mt-0">
         <div class="relative">
           <button id="languageToggle" class="btn-lang">
@@ -144,6 +191,12 @@
       </div>
     </header>
 
+    <!-- جستجو -->
+    <div class="mb-6">
+      <input id="walletSearch" type="text" class="search-input" placeholder="جستجوی آدرس کیف‌پول..." data-translate-placeholder="searchPlaceholder">
+      <div id="walletInfo" class="wallet-info"></div>
+    </div>
+
     <!-- نمایش قیمت -->
     <div id="priceDisplay" class="mb-6 card p-4">
       <span data-translate="pxPrice">قیمت PX</span>: $<span id="pxPrice">...</span>
@@ -151,44 +204,76 @@
 
     <!-- لیست تراکنش‌ها -->
     <div id="transactions" class="space-y-4"></div>
+    <button id="loadMoreBtn" class="load-more-btn" data-translate="loadMore">بارگذاری بیشتر</button>
   </div>
 
   <script>
     let latestHash = null;
     let currentLang = 'fa';
+    let allTransactions = [];
+    let walletFilter = '';
+    let offset = 0;
 
     const translations = {
       fa: {
+        title: 'تراکنش‌ها',
         pxPrice: 'قیمت PX',
         buy: 'خرید',
         sell: 'فروش',
         wallet: 'کیف‌پول',
         amount: 'مقدار',
-        value: 'قیمت'
+        value: 'قیمت',
+        searchPlaceholder: 'جستجوی آدرس کیف‌پول...',
+        walletBalance: 'موجودی کیف‌پول',
+        walletStatus: 'وضعیت کیف‌پول',
+        invalidWallet: 'کیف‌پول نامعتبر یا یافت نشد',
+        walletError: 'خطا در دریافت اطلاعات کیف‌پول',
+        loadMore: 'بارگذاری بیشتر'
       },
       en: {
+        title: 'Transactions',
         pxPrice: 'PX Price',
         buy: 'Buy',
         sell: 'Sell',
         wallet: 'Wallet',
         amount: 'Amount',
-        value: 'Value'
+        value: 'Value',
+        searchPlaceholder: 'Search wallet address...',
+        walletBalance: 'Wallet Balance',
+        walletStatus: 'Wallet Status',
+        invalidWallet: 'Invalid or not found wallet',
+        walletError: 'Error fetching wallet information',
+        loadMore: 'Load More'
       },
       ru: {
+        title: 'Транзакции',
         pxPrice: 'Цена PX',
         buy: 'Купить',
         sell: 'Продать',
         wallet: 'Кошелёк',
         amount: 'Количество',
-        value: 'Стоимость'
+        value: 'Стоимость',
+        searchPlaceholder: 'Поиск адреса кошелька...',
+        walletBalance: 'Баланс кошелька',
+        walletStatus: 'Статус кошелька',
+        invalidWallet: 'Недействительный или ненайденный кошелёк',
+        walletError: 'Ошибка при получении информации о кошельке',
+        loadMore: 'Загрузить больше'
       },
       ar: {
+        title: 'المعاملات',
         pxPrice: 'سعر PX',
         buy: 'شراء',
         sell: 'بيع',
         wallet: 'المحفظة',
         amount: 'الكمية',
-        value: 'القيمة'
+        value: 'القيمة',
+        searchPlaceholder: 'ابحث عن عنوان المحفظة...',
+        walletBalance: 'رصيد المحفظة',
+        walletStatus: 'حالة المحفظة',
+        invalidWallet: 'محفظة غير صالحة أو غير موجودة',
+        walletError: 'خطأ في جلب معلومات المحفظة',
+        loadMore: 'تحميل المزيد'
       }
     };
 
@@ -206,8 +291,68 @@
       ar: 'rtl'
     };
 
+    const numberFormats = {
+      fa: ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'],
+      ar: ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'],
+      en: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+      ru: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+    };
+
+    function toLocalizedNumber(number) {
+      const str = number.toString();
+      const digits = numberFormats[currentLang];
+      return str.replace(/\d/g, d => digits[parseInt(d)]);
+    }
+
     function translate(key) {
       return translations[currentLang][key] || key;
+    }
+
+    function base64UrlEncode(buffer) {
+      return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function hexToBytes(hex) {
+      hex = hex.replace(/^0x/, '').replace(/:/g, '');
+      const bytes = new Uint8Array(hex.length / 2);
+      for (let i = 0; i < bytes.length; i++) {
+        bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+      }
+      return bytes;
+    }
+
+    function crc16(buf) {
+      let crc = 0xffff;
+      for (let b of buf) {
+        crc ^= b << 8;
+        for (let i = 0; i < 8; i++) {
+          if (crc & 0x8000) crc = (crc << 1) ^ 0x1021;
+          else crc <<= 1;
+        }
+      }
+      return crc & 0xffff;
+    }
+
+    function toUQ(rawAddress) {
+      try {
+        if (!rawAddress.includes(":")) return rawAddress; // اگر فرمت نادرست باشد، همان آدرس برگردانده می‌شود
+        const wc = parseInt(rawAddress.split(":")[0]);
+        const hex = rawAddress.split(":")[1];
+        const hashPart = hexToBytes(hex);
+        const tag = 0x11; // non-bounceable UQ format
+        const full = new Uint8Array(1 + 1 + hashPart.length + 2);
+        full[0] = tag;
+        full[1] = wc;
+        full.set(hashPart, 2);
+        const crc = crc16(full.slice(0, 34));
+        full[34] = crc & 0xff;
+        full[35] = (crc >> 8) & 0xff;
+        return base64UrlEncode(full);
+      } catch (e) {
+        console.error('خطا در تبدیل آدرس به UQ:', e);
+        return rawAddress;
+      }
     }
 
     function updateTranslations() {
@@ -215,21 +360,15 @@
         const key = element.getAttribute('data-translate');
         element.textContent = translate(key);
       });
+      document.querySelectorAll('[data-translate-placeholder]').forEach(element => {
+        const key = element.getAttribute('data-translate-placeholder');
+        element.placeholder = translate(key);
+      });
       document.getElementById('currentLang').textContent = langIcons[currentLang];
       document.documentElement.setAttribute('dir', langDirections[currentLang]);
       document.documentElement.lang = currentLang;
-      const transactions = document.querySelectorAll('.transaction-card');
-      transactions.forEach(tx => {
-        const typeElement = tx.querySelector('.tx-type');
-        const walletElement = tx.querySelector('.tx-wallet');
-        const amountElement = tx.querySelector('.tx-amount');
-        const valueElement = tx.querySelector('.tx-value');
-        const typeKey = typeElement.getAttribute('data-type');
-        typeElement.textContent = translate(typeKey);
-        amountElement.innerHTML = `${translate('amount')}: <span class="amount-value">${tx.dataset.amount}</span>`;
-        valueElement.innerHTML = `${translate('value')}: <span class="amount-value">${tx.dataset.value}</span>`;
-        walletElement.innerHTML = `${translate('wallet')}: <a href="https://tonviewer.com/${tx.dataset.wallet}" target="_blank" class="text-blue-500 underline">${tx.dataset.wallet.slice(0, 6)}...${tx.dataset.wallet.slice(-4)}</a>`;
-      });
+      document.title = translate('title');
+      updateTransactionDisplay();
     }
 
     async function fetchPxPrice() {
@@ -237,55 +376,87 @@
         const res = await fetch('https://api.dexscreener.com/token-pairs/v1/ton/EQB420yQsZobGcy0VYDfSKHpG2QQlw-j1f_tPu1J488I__PX');
         const data = await res.json();
         const price = data[0]?.priceUsd || '0.07717';
-        document.getElementById('pxPrice').textContent = Number(price).toFixed(4);
+        document.getElementById('pxPrice').textContent = toLocalizedNumber(Number(price).toFixed(4));
       } catch (e) {
-        document.getElementById('pxPrice').textContent = '0.07717';
+        document.getElementById('pxPrice').textContent = toLocalizedNumber('0.07717');
         console.error('خطا در دریافت قیمت:', e);
       }
     }
 
-    async function fetchTransactions() {
+    async function fetchTransactions(loadMore = false) {
       try {
-        const res = await fetch('https://api.dyor.io/v1/jettons/EQB420yQsZobGcy0VYDfSKHpG2QQlw-j1f_tPu1J488I__PX/transactions');
+        const params = new URLSearchParams({
+          limit: 20,
+          offset: loadMore ? offset : 0
+        });
+        const res = await fetch(`https://api.dyor.io/v1/jettons/EQB420yQsZobGcy0VYDfSKHpG2QQlw-j1f_tPu1J488I__PX/transactions?${params}`);
         const data = await res.json();
         const newTxs = [];
-        for (const tx of data.transactions.slice(0, 10)) {
-          if (tx.hash === latestHash) break;
-          newTxs.push(tx);
+        for (const tx of data.transactions) {
+          if (!allTransactions.some(existingTx => existingTx.hash === tx.hash)) {
+            newTxs.push(tx);
+          }
         }
         if (newTxs.length > 0) {
           latestHash = newTxs[0].hash;
-          addTransactions(newTxs.reverse());
+          allTransactions = [...newTxs.reverse(), ...allTransactions];
+          if (loadMore) offset += 20;
+          updateTransactionDisplay();
+        }
+        if (data.transactions.length < 20) {
+          document.getElementById('loadMoreBtn').style.display = 'none';
         }
       } catch (e) {
         console.error('خطا در دریافت تراکنش‌ها:', e);
       }
     }
 
-    function addTransactions(txs) {
+    async function fetchWalletInfo(address) {
+      try {
+        const res = await fetch(`https://toncenter.com/api/v2/getAddressInformation?address=${address}`);
+        const data = await res.json();
+        if (data.ok) {
+          const balance = (parseInt(data.result.balance) / Math.pow(10, 9)).toLocaleString();
+          const status = data.result.state;
+          document.getElementById('walletInfo').innerHTML = `
+            ${translate('walletBalance')}: ${toLocalizedNumber(balance)} TON<br>
+            ${translate('walletStatus')}: ${translate(status)}
+          `;
+        } else {
+          document.getElementById('walletInfo').innerHTML = translate('invalidWallet');
+        }
+      } catch (e) {
+        document.getElementById('walletInfo').innerHTML = translate('walletError');
+        console.error('خطا در دریافت اطلاعات کیف‌پول:', e);
+      }
+    }
+
+    function updateTransactionDisplay() {
       const container = document.getElementById('transactions');
-      txs.forEach(tx => {
+      container.innerHTML = '';
+      const filteredTxs = walletFilter
+        ? allTransactions.filter(tx => tx.whoFriendly.toLowerCase().includes(walletFilter.toLowerCase()))
+        : allTransactions;
+      filteredTxs.forEach(tx => {
         const div = document.createElement('div');
         div.className = 'transaction-enter card p-4 transaction-card';
         div.dataset.wallet = tx.whoFriendly;
         const typeKey = tx.type === 'TT_BUY' ? 'buy' : 'sell';
         const typeClass = tx.type === 'TT_BUY' ? 'tx-buy' : 'tx-sell';
-        const amount = `${Math.floor(parseInt(tx.amount.value) / Math.pow(10, tx.amount.decimals)).toLocaleString()} PX`;
-        const value = `$${Math.floor((parseInt(tx.amount.value) / Math.pow(10, tx.amount.decimals)) * Number(document.getElementById('pxPrice').textContent)).toLocaleString()}`;
-        div.dataset.amount = amount;
-        div.dataset.value = value;
+        const amount = toLocalizedNumber(Math.floor(parseInt(tx.amount.value) / Math.pow(10, tx.amount.decimals)).toLocaleString());
+        const value = toLocalizedNumber(Math.floor((parseInt(tx.amount.value) / Math.pow(10, tx.amount.decimals)) * Number(document.getElementById('pxPrice').textContent.replace(/[۰-۹٠-٩]/g, d => numberFormats.en[numberFormats[currentLang].indexOf(d)]))).toLocaleString());
+        const uqAddress = toUQ(tx.whoFriendly);
+        div.dataset.amount = `${amount} PX`;
+        div.dataset.value = `$${value}`;
         div.innerHTML = `
           <div class="font-semibold text-lg tx-type ${typeClass}" data-type="${typeKey}">${translate(typeKey)}</div>
-          <div class="text-gray-600 dark:text-white tx-amount">${translate('amount')}: <span class="amount-value">${amount}</span></div>
-          <div class="text-gray-600 dark:text-white tx-value">${translate('value')}: <span class="amount-value">${value}</span></div>
-          <div class="text-sm text-gray-500 dark:text-white tx-wallet">${translate('wallet')}: <a href="https://tonviewer.com/${tx.whoFriendly}" target="_blank" class="text-blue-500 underline">${tx.whoFriendly.slice(0, 6)}...${tx.whoFriendly.slice(-4)}</a></div>
+          <div class="text-gray-600 dark:text-white tx-amount">${translate('amount')}: <span class="amount-value">${amount} PX</span></div>
+          <div class="text-gray-600 dark:text-white tx-value">${translate('value')}: <span class="amount-value">$${value}</span></div>
+          <div class="text-sm text-gray-500 dark:text-white tx-wallet">${translate('wallet')}: <a href="https://tonviewer.com/${uqAddress}" target="_blank" class="text-blue-500 underline">${uqAddress.slice(0, 6)}...${uqAddress.slice(-4)}</a></div>
         `;
-        container.insertBefore(div, container.firstChild);
+        container.appendChild(div);
         requestAnimationFrame(() => div.classList.add('transaction-enter-active'));
       });
-      while (container.children.length > 10) {
-        container.removeChild(container.lastChild);
-      }
     }
 
     // مدیریت منوی زبان
@@ -308,6 +479,19 @@
       document.body.classList.toggle('dark', e.target.checked);
       const toggleIcon = document.querySelector('.toggle-icon');
       toggleIcon.textContent = e.target.checked ? '🌙' : '☀️';
+    });
+
+    // رویداد جستجو
+    document.getElementById('walletSearch').addEventListener('input', e => {
+      walletFilter = e.target.value.trim();
+      if (walletFilter) fetchWalletInfo(walletFilter);
+      else document.getElementById('walletInfo').innerHTML = '';
+      updateTransactionDisplay();
+    });
+
+    // رویداد بارگذاری بیشتر
+    document.getElementById('loadMoreBtn').addEventListener('click', () => {
+      fetchTransactions(true);
     });
 
     // به‌روزرسانی‌های خودکار
